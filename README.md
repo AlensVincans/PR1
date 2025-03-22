@@ -54,3 +54,4 @@ Programmatūra nodrošina šādas iespējas:
 - **Ksenija Šitikova**
 - **Alens Vincāns**
 - **Marks Šafirs**
+- **Roberts Ozoliņš**
