@@ -3,33 +3,23 @@ from collections import deque
 
 class GameGraph:
     def __init__(self):
-        """Initialize the game graph with an empty dictionary and an explored set."""
         self.graph = {}
         self.explored = set()
 
     def add_node(self, state):
-        """Add a new state to the graph if it does not already exist."""
         if state not in self.graph:
             self.graph[state] = []
 
     def add_edge(self, parent_state, child_state):
-        """Add an edge between parent and child states if not already present."""
         if child_state not in self.graph[parent_state]:
             self.graph[parent_state].append(child_state)
 
     def heuristic_evaluation(self, state):
-        """
-        Evaluate the heuristic score of a given state.
-        The heuristic favors the player with more points and stones collected.
-        """
         stones_left, player1_stones, player2_stones, player1_points, player2_points, is_player_turn = state
         return (player2_points - player1_points) + (player2_stones - player1_stones) + \
                (2 if stones_left > 0 and stones_left % 2 == (0 if is_player_turn == 1 else 1) else 0)
 
     def build_graph(self, stones, player1_stones=0, player2_stones=0, player1_points=0, player2_points=0, player=1):
-        """
-        Build the game graph by exploring all possible moves and outcomes.
-        """
         queue = deque()
         root_state = (stones, player1_stones, player2_stones, player1_points, player2_points, player)
         queue.append(root_state)
@@ -47,14 +37,13 @@ class GameGraph:
                 if stones_left >= move:
                     new_stones = stones_left - move
 
-                    # If this is the last move, only points are updated, and parity is ignored
                     if new_stones == 0:
                         if current_player == 1:
                             new_state = (new_stones, p1_s, p2_s, p1_p + move, p2_p, 2)
                         else:
                             new_state = (new_stones, p1_s, p2_s, p1_p, p2_p + move, 1)
                     else:
-                        if new_stones > 0 and new_stones % 2 == 0:
+                        if new_stones % 2 == 0:
                             if current_player == 1:
                                 new_state = (new_stones, p1_s + move, p2_s, p1_p, p2_p + 2, 2)
                             else:
@@ -72,16 +61,7 @@ class GameGraph:
                         queue.append(new_state)
                         self.explored.add(new_state)
 
-    def print_graph(self):
-        """Print the entire game graph for debugging purposes."""
-        for node, children in self.graph.items():
-            print(f"{node} --> {children}")
-
     def minimax(self, state, depth, max_depth, maximizing_player, cache):
-        """
-        Minimax algorithm with memoization.
-        Evaluates the best possible move for the current player.
-        """
         if state in cache:
             return cache[state]
 
@@ -109,9 +89,6 @@ class GameGraph:
         return best_val
 
     def best_move(self, state, max_depth=3):
-        """
-        Determine the best move for the current player using Minimax.
-        """
         children = self.graph.get(state, [])
         if not children:
             return None
@@ -127,28 +104,64 @@ class GameGraph:
                 best_child = child
 
         return best_child
+    def alpha_beta(self, state, depth, max_depth, alpha, beta, maximizing_player):
+        if depth == max_depth or state[0] == 0:
+            return self.heuristic_evaluation(state)
+
+        children = self.graph.get(state, [])
+        if not children:
+            return self.heuristic_evaluation(state)
+
+        if maximizing_player:
+            value = float('-inf')
+            for child in children:
+                value = max(value, self.alpha_beta(child, depth + 1, max_depth, alpha, beta, False))
+                alpha = max(alpha, value)
+                if alpha >= beta:
+                    break
+            return value
+        else:
+            value = float('inf')
+            for child in children:
+                value = min(value, self.alpha_beta(child, depth + 1, max_depth, alpha, beta, True))
+                beta = min(beta, value)
+                if beta <= alpha:
+                    break
+            return value
+
+    def best_move_alpha_beta(self, state, max_depth=3):
+        children = self.graph.get(state, [])
+        if not children:
+            return None
+
+        best_val = float('-inf') if state[5] == 2 else float('inf')
+        best_child = None
+
+        for child in children:
+            val = self.alpha_beta(child, 1, max_depth, float('-inf'), float('inf'), state[5] == 2)
+            if (state[5] == 2 and val > best_val) or (state[5] == 1 and val < best_val):
+                best_val = val
+                best_child = child
+
+        return best_child
 
 
 def play_game(stones, first_player, algorithm_choice):
-    """
-    Start and manage the game loop between the player and the computer.
-    """
     game_graph = GameGraph()
     game_graph.build_graph(stones, player=first_player)
-    # game_graph.print_graph() # For ilustration
 
     state = (stones, 0, 0, 0, 0, first_player)
 
     while state[0] > 0:
         print(f"Current state: {state}")
 
-        if state[0] in [2, 3]:  # If this is the last move
-            move = state[0]  # Take all remaining stones
+        if state[0] in [2, 3]:
+            move = state[0]
             if state[5] == 1:
                 state = (0, state[1], state[2], state[3] + move, state[4], 2)
             else:
                 state = (0, state[1], state[2], state[3], state[4] + move, 1)
-            break  # End game
+            break
 
         if state[5] == 1:
             move = int(input("Your move (2 or 3): "))
@@ -157,16 +170,19 @@ def play_game(stones, first_player, algorithm_choice):
                 continue
 
             new_stones = state[0] - move
-            if new_stones == 0:  # If no stones remain after the move, only add points
+            if new_stones == 0:
                 state = (new_stones, state[1], state[2], state[3] + move, state[4], 2)
-            elif new_stones > 0 and new_stones % 2 == 0:
+            elif new_stones % 2 == 0:
                 state = (new_stones, state[1] + move, state[2], state[3], state[4] + 2, 2)
             else:
                 state = (new_stones, state[1] + move, state[2], state[3] + 2, state[4], 2)
 
         else:
             print("Computer is thinking...")
-            state = game_graph.best_move(state, 3) or state
+            if algorithm_choice == 1:
+                state = game_graph.best_move(state, 3) or state
+            else:
+                state = game_graph.best_move_alpha_beta(state, 3) or state
 
     stones_left, p1_s, p2_s, p1_p, p2_p, pl = state
     final_p1 = p1_s + p1_p
@@ -182,7 +198,6 @@ def play_game(stones, first_player, algorithm_choice):
 
 
 def get_valid_input(prompt, valid_range):
-    """Pieprasa lietotāja ievadi un pārbauda, vai tā atbilst derīgām vērtībām."""
     while True:
         try:
             value = int(input(prompt))
@@ -193,6 +208,7 @@ def get_valid_input(prompt, valid_range):
         except ValueError:
             print("Invalid input! Please enter a number.")
 
+
 if __name__ == "__main__":
     while True:
         stones = get_valid_input("Enter the number of stones to start (50-70): ", range(50, 71))
@@ -200,7 +216,6 @@ if __name__ == "__main__":
         algorithm_choice = get_valid_input("Choose AI algorithm (1 - Minimax, 2 - Alpha-Beta Pruning): ", [1, 2])
 
         play_game(stones, first_player, algorithm_choice)
-
         restart = input("Do you want to play again? (yes/no): ").strip().lower()
         if restart not in ["yes", "y"]:
             print("Thanks for playing! Goodbye!")
