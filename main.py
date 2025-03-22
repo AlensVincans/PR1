@@ -129,7 +129,7 @@ class GameGraph:
         return best_child
 
 
-def play_game(stones, first_player):
+def play_game(stones, first_player, algorithm_choice):
     """
     Start and manage the game loop between the player and the computer.
     """
@@ -181,31 +181,26 @@ def play_game(stones, first_player):
         print("It's a tie!")
 
 
+def get_valid_input(prompt, valid_range):
+    """Pieprasa lietotāja ievadi un pārbauda, vai tā atbilst derīgām vērtībām."""
+    while True:
+        try:
+            value = int(input(prompt))
+            if value in valid_range:
+                return value
+            else:
+                print(f"Please enter a valid number: {valid_range}")
+        except ValueError:
+            print("Invalid input! Please enter a number.")
+
 if __name__ == "__main__":
     while True:
-        while True:
-            try:
-                stones = int(input("Enter the number of stones to start (50-70): "))
-                if 50 <= stones <= 70:
-                    break
-                else:
-                    print("Please enter a number between 50 and 70.")
-            except ValueError:
-                print("Invalid input! Please enter a number.")
+        stones = get_valid_input("Enter the number of stones to start (50-70): ", range(50, 71))
+        first_player = get_valid_input("Who starts? (1 - You, 2 - Computer): ", [1, 2])
+        algorithm_choice = get_valid_input("Choose AI algorithm (1 - Minimax, 2 - Alpha-Beta Pruning): ", [1, 2])
 
-        while True:
-            try:
-                first_player = int(input("Who starts? (1 - You, 2 - Computer): "))
-                if first_player in [1, 2]:
-                    break
-                else:
-                    print("Please enter 1 for You or 2 for Computer.")
-            except ValueError:
-                print("Invalid input! Please enter 1 or 2.")
+        play_game(stones, first_player, algorithm_choice)
 
-        play_game(stones, first_player)
-
-        # Ask if the player wants to restart
         restart = input("Do you want to play again? (yes/no): ").strip().lower()
         if restart not in ["yes", "y"]:
             print("Thanks for playing! Goodbye!")
