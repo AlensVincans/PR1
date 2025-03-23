@@ -60,6 +60,11 @@ class GameGraph:
                     if new_state not in self.explored:
                         queue.append(new_state)
                         self.explored.add(new_state)
+    
+    def print_graph(self):
+        """Print the entire game graph for debugging purposes."""
+        for node, children in self.graph.items():
+            print(f"{node} --> {children}")
 
     def minimax(self, state, depth, max_depth, maximizing_player, cache):
         if state in cache:
