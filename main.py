@@ -1,4 +1,6 @@
 from collections import deque
+import time
+
 
 
 class GameGraph:
@@ -184,10 +186,17 @@ def play_game(stones, first_player, algorithm_choice):
 
         else:
             print("Computer is thinking...")
+            start_time = time.time()
+
             if algorithm_choice == 1:
                 state = game_graph.best_move(state, 3) or state
             else:
                 state = game_graph.best_move_alpha_beta(state, 3) or state
+
+            end_time = time.time()
+            elapsed_time = end_time - start_time
+            print(f"Computer move time: {elapsed_time:.4f} seconds")
+
 
     stones_left, p1_s, p2_s, p1_p, p2_p, pl = state
     final_p1 = p1_s + p1_p
