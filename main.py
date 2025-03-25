@@ -94,23 +94,28 @@ class GameGraph:
 
         cache[state] = best_val
         return best_val
-
-    def best_move(self, state, max_depth=3):
+    
+    def best_move_combined(self, state, max_depth=3, use_alpha_beta=False):
         children = self.graph.get(state, [])
         if not children:
             return None
 
-        best_child = None
         best_val = float('-inf') if state[5] == 2 else float('inf')
+        best_child = None
         cache = {}
 
         for child in children:
-            val = self.minimax(child, 1, max_depth, state[5] == 1, cache)
+            if use_alpha_beta:
+                val = self.alpha_beta(child, 1, max_depth, float('-inf'), float('inf'), state[5] == 2)
+            else:
+                val = self.minimax(child, 1, max_depth, state[5] == 1, cache)
+
             if (state[5] == 2 and val > best_val) or (state[5] == 1 and val < best_val):
                 best_val = val
                 best_child = child
 
         return best_child
+
     def alpha_beta(self, state, depth, max_depth, alpha, beta, maximizing_player):
         if depth == max_depth or state[0] == 0:
             return self.heuristic_evaluation(state)
@@ -136,24 +141,10 @@ class GameGraph:
                     break
             return value
 
-    def best_move_alpha_beta(self, state, max_depth=3):
-        children = self.graph.get(state, [])
-        if not children:
-            return None
-
-        best_val = float('-inf') if state[5] == 2 else float('inf')
-        best_child = None
-
-        for child in children:
-            val = self.alpha_beta(child, 1, max_depth, float('-inf'), float('inf'), state[5] == 2)
-            if (state[5] == 2 and val > best_val) or (state[5] == 1 and val < best_val):
-                best_val = val
-                best_child = child
-
-        return best_child
-
-
 def play_game(stones, first_player, algorithm_choice):
+
+    computer_move_times = []
+
     game_graph = GameGraph()
     game_graph.build_graph(stones, player=first_player)
 
@@ -162,13 +153,22 @@ def play_game(stones, first_player, algorithm_choice):
     while state[0] > 0:
         print(f"Current state: {state}")
 
-        if state[0] in [2, 3]:
-            move = state[0]
+        if state[0] == 1:
             if state[5] == 1:
-                state = (0, state[1], state[2], state[3] + move, state[4], 2)
+                state = (0, state[1], state[2] + 1, state[3], state[4], 1)
             else:
-                state = (0, state[1], state[2], state[3], state[4] + move, 1)
+                state = (0, state[1] + 1, state[2], state[3], state[4], 2)
             break
+
+        if state[0] in [2, 3]:
+            if state[0] in [1, 2]:
+                remaining = state[0]
+                if state[5] == 1:
+                    state = (0, state[1], state[2] + remaining, state[3], state[4], 1)
+                else:
+                    state = (0, state[1] + remaining, state[2], state[3], state[4], 2)
+                break
+
 
         if state[5] == 1:
             move = int(input("Your move (2 or 3): "))
@@ -188,14 +188,18 @@ def play_game(stones, first_player, algorithm_choice):
             print("Computer is thinking...")
             start_time = time.time()
 
-            if algorithm_choice == 1:
-                state = game_graph.best_move(state, 3) or state
-            else:
-                state = game_graph.best_move_alpha_beta(state, 3) or state
+            use_alpha_beta = (algorithm_choice == 2)
+            state = game_graph.best_move_combined(state, 3, use_alpha_beta) or state
 
             end_time = time.time()
             elapsed_time = end_time - start_time
+            computer_move_times.append(elapsed_time)
+
             print(f"Computer move time: {elapsed_time:.4f} seconds")
+
+    if computer_move_times:
+        avg_time = sum(computer_move_times) / len(computer_move_times)
+        print(f"\nAverage computer move time: {avg_time:.4f} seconds")
 
 
     stones_left, p1_s, p2_s, p1_p, p2_p, pl = state
