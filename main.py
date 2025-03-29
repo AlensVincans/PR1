@@ -1,8 +1,6 @@
 from collections import deque
 import time
 
-
-
 class GameGraph:
     def __init__(self):
         self.graph = {}
