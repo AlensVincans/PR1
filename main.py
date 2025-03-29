@@ -62,7 +62,6 @@ class GameGraph:
                         self.explored.add(new_state)
     
     def print_graph(self):
-        """Print the entire game graph for debugging purposes."""
         for node, children in self.graph.items():
             print(f"{node} --> {children}")
 
@@ -80,12 +79,12 @@ class GameGraph:
             return self.heuristic_evaluation(state)
 
         if maximizing_player:
-            best_val = float('-inf')
+            best_val = float('-1')
             for child in children:
                 val = self.minimax(child, depth + 1, max_depth, False, cache)
                 best_val = max(best_val, val)
         else:
-            best_val = float('inf')
+            best_val = float('1')
             for child in children:
                 val = self.minimax(child, depth + 1, max_depth, True, cache)
                 best_val = min(best_val, val)
@@ -98,13 +97,13 @@ class GameGraph:
         if not children:
             return None
 
-        best_val = float('-inf') if state[5] == 2 else float('inf')
+        best_val = float('-1') if state[5] == 2 else float('1')
         best_child = None
         cache = {}
 
         for child in children:
             if use_alpha_beta:
-                val = self.alpha_beta(child, 1, max_depth, float('-inf'), float('inf'), state[5] == 2)
+                val = self.alpha_beta(child, 1, max_depth, float('-1'), float('1'), state[5] == 2)
             else:
                 val = self.minimax(child, 1, max_depth, state[5] == 1, cache)
 
@@ -123,7 +122,7 @@ class GameGraph:
             return self.heuristic_evaluation(state)
 
         if maximizing_player:
-            value = float('-inf')
+            value = float('-1')
             for child in children:
                 value = max(value, self.alpha_beta(child, depth + 1, max_depth, alpha, beta, False))
                 alpha = max(alpha, value)
@@ -131,7 +130,7 @@ class GameGraph:
                     break
             return value
         else:
-            value = float('inf')
+            value = float('1')
             for child in children:
                 value = min(value, self.alpha_beta(child, depth + 1, max_depth, alpha, beta, True))
                 beta = min(beta, value)
@@ -149,7 +148,7 @@ def play_game(stones, first_player, algorithm_choice):
     state = (stones, 0, 0, 0, 0, first_player)
 
     while state[0] > 0:
-        print(f"Current state: {state}")
+        print(f"Spēles stāvoklis: {state}")
 
         if state[0] == 1:
             if state[5] == 1:
@@ -169,9 +168,9 @@ def play_game(stones, first_player, algorithm_choice):
 
 
         if state[5] == 1:
-            move = int(input("Your move (2 or 3): "))
+            move = int(input("Jūsu gājiens (2 vai 3): "))
             if move not in [2, 3] or state[0] < move:
-                print("Invalid move! Try again.")
+                print("Nederīgs gājiens! Mēģini vēlreiz.")
                 continue
 
             new_stones = state[0] - move
@@ -183,7 +182,6 @@ def play_game(stones, first_player, algorithm_choice):
                 state = (new_stones, state[1] + move, state[2], state[3] + 2, state[4], 2)
 
         else:
-            print("Computer is thinking...")
             start_time = time.time()
 
             use_alpha_beta = (algorithm_choice == 2)
@@ -193,24 +191,24 @@ def play_game(stones, first_player, algorithm_choice):
             elapsed_time = end_time - start_time
             computer_move_times.append(elapsed_time)
 
-            print(f"Computer move time: {elapsed_time:.4f} seconds")
+            print(f"Datora gājiena laiks: {elapsed_time:.4f} seconds")
 
     if computer_move_times:
         avg_time = sum(computer_move_times) / len(computer_move_times)
-        print(f"\nAverage computer move time: {avg_time:.4f} seconds")
+        print(f"\nVidējais datora gājiena laiks: {avg_time:.4f} seconds")
 
 
     stones_left, p1_s, p2_s, p1_p, p2_p, pl = state
     final_p1 = p1_s + p1_p
     final_p2 = p2_s + p2_p
     print("\n--- Game Over ---")
-    print(f"Player: {final_p1}, Computer: {final_p2}")
+    print(f"Speletājs: {final_p1}, Dators: {final_p2}")
     if final_p1 > final_p2:
-        print("Player wins!")
+        print("Spēlētājs uzvar!")
     elif final_p2 > final_p1:
-        print("Computer wins!")
+        print("Dators uzvar!")
     else:
-        print("It's a tie!")
+        print("Spēle beidzās neizšķirti!")
 
 
 def get_valid_input(prompt, valid_range):
@@ -222,17 +220,17 @@ def get_valid_input(prompt, valid_range):
             else:
                 print(f"Please enter a valid number: {valid_range}")
         except ValueError:
-            print("Invalid input! Please enter a number.")
+            print("Lūdzu, ievadiet derīgu skaitli: ")
 
 
 if __name__ == "__main__":
     while True:
-        stones = get_valid_input("Enter the number of stones to start (50-70): ", range(50, 71))
-        first_player = get_valid_input("Who starts? (1 - You, 2 - Computer): ", [1, 2])
-        algorithm_choice = get_valid_input("Choose AI algorithm (1 - Minimax, 2 - Alpha-Beta Pruning): ", [1, 2])
+        stones = get_valid_input("Ievadiet sākuma akmeņu skaitu (no 50 līdz 70): ", range(50, 71))
+        first_player = get_valid_input("Kas sāk spēli? (1 — Jūs, 2 — Dators):  ", [1, 2])
+        algorithm_choice = get_valid_input("Izvēlieties AI algoritmu (1 — Minimax, 2 — Alfa-beta): ", [1, 2])
 
         play_game(stones, first_player, algorithm_choice)
-        restart = input("Do you want to play again? (yes/no): ").strip().lower()
+        restart = input("Vai vēlaties spēlēt vēlreiz? (yes/no):").strip().lower()
         if restart not in ["yes", "y"]:
-            print("Thanks for playing! Goodbye!")
+            print("Paldies par spēli! Uz redzēšanos!")
             break
