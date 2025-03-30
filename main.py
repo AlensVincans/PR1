@@ -46,21 +46,17 @@ class GameGraph:
                 if akmeni_atlika >= cik_panak:
                     jaunais_atlika = akmeni_atlika - cik_panak
                     if jaunais_atlika == 0:
-                        # Ja pēc gājiena akmens kaudze iztukšojas
                         if kam_gajiens == 1:
                             jaunais_stavoklis = (jaunais_atlika, sp1_akm, sp2_akm, sp1_punkti + cik_panak, sp2_punkti, 2)
                         else:
                             jaunais_stavoklis = (jaunais_atlika, sp1_akm, sp2_akm, sp1_punkti, sp2_punkti + cik_panak, 1)
                     else:
-                        # Ja paliek akmeņi
                         if jaunais_atlika % 2 == 0:
-                            # Pāra skaits => punkti pretiniekam
                             if kam_gajiens == 1:
                                 jaunais_stavoklis = (jaunais_atlika, sp1_akm + cik_panak, sp2_akm, sp1_punkti, sp2_punkti + 2, 2)
                             else:
                                 jaunais_stavoklis = (jaunais_atlika, sp1_akm, sp2_akm + cik_panak, sp1_punkti + 2, sp2_punkti, 1)
                         else:
-                            # Nepāra skaits => punkti pašam
                             if kam_gajiens == 1:
                                 jaunais_stavoklis = (jaunais_atlika, sp1_akm + cik_panak, sp2_akm, sp1_punkti + 2, sp2_punkti, 2)
                             else:
@@ -140,7 +136,6 @@ class GameGraph:
         if not children:
             return None
 
-        # kam_gajiens = 1 => cilvēks (minimizing), 2 => dators (maximizing)
         maximizing_player = (state[5] == 2)
         if maximizing_player:
             best_val = float('-inf')
@@ -171,31 +166,26 @@ class GameApp(tk.Tk):
         super().__init__()
         self.title("Akmens spēle (2 vai 3)")
 
-        # Noklusējuma parametri
         self.stones = 50
         self.first_player = 1
         self.algorithm_choice = 1
 
-        # Saglabāsim spēles stāvokli un papildu datus
         self.game_graph = None
         self.state = None
-        self.computer_move_times = []   # glabās datora gājienu izpildes laikus
+        self.computer_move_times = []   
 
         self.create_widgets()
 
     def create_widgets(self):
-        # Iestatījumu rāmītis
         frame_options = ttk.LabelFrame(self, text="Spēles iestatījumi")
         frame_options.pack(padx=10, pady=10, fill=tk.X)
 
-        # Sākuma akmeņu skaits
         ttk.Label(frame_options, text="Sākuma akmeņu skaits (50-70):").pack(anchor=tk.W)
         self.spin_stones = tk.Spinbox(
             frame_options, from_=50, to=70, width=5
         )
         self.spin_stones.pack(anchor=tk.W, pady=2)
 
-        # Kurš sāk
         ttk.Label(frame_options, text="Kurš sāk spēli?").pack(anchor=tk.W)
         self.first_player_var = tk.IntVar(value=1)
         rb_player1 = ttk.Radiobutton(frame_options, text="Jūs (Spēlētājs)", variable=self.first_player_var, value=1)
@@ -203,7 +193,6 @@ class GameApp(tk.Tk):
         rb_player1.pack(anchor=tk.W)
         rb_player2.pack(anchor=tk.W)
 
-        # Algoritms
         ttk.Label(frame_options, text="Izvēlieties datora algoritmu:").pack(anchor=tk.W)
         self.algorithm_var = tk.IntVar(value=1)
         rb_minimax = ttk.Radiobutton(frame_options, text="Minimax", variable=self.algorithm_var, value=1)
@@ -211,29 +200,23 @@ class GameApp(tk.Tk):
         rb_minimax.pack(anchor=tk.W)
         rb_alphabeta.pack(anchor=tk.W)
 
-        # Poga "Sākt spēli"
         self.start_button = ttk.Button(frame_options, text="Sākt spēli", command=self.start_game)
         self.start_button.pack(pady=5)
 
-        # Rāmītis "Spēles gaita"
         frame_game = ttk.LabelFrame(self, text="Spēles gaita")
         frame_game.pack(padx=10, pady=10, fill=tk.BOTH, expand=True)
 
-        # Teksta lauks stāvokļa izdrukai
         self.game_state_text = tk.Text(frame_game, height=10, width=60, state='disabled')
         self.game_state_text.pack(pady=5)
 
-        # Ievads spēlētāja gājienam
         self.player_move_var = tk.StringVar()
         ttk.Label(frame_game, text="Jūsu gājiens (2 vai 3):").pack(anchor=tk.W)
         self.entry_move = ttk.Entry(frame_game, textvariable=self.player_move_var, width=5)
         self.entry_move.pack(anchor=tk.W, pady=2)
 
-        # Poga "Veikt gājienu"
         self.move_button = ttk.Button(frame_game, text="Veikt gājienu", command=self.player_move)
         self.move_button.pack(pady=5)
 
-        # Poga "Sākt no jauna" (sākumā atspējota, ieslēgsies pēc spēles beigām)
         self.restart_button = ttk.Button(frame_game, text="Sākt no jauna", command=self.restart_game)
         self.restart_button.pack(pady=5)
         self.restart_button.config(state='disabled')
@@ -252,14 +235,12 @@ class GameApp(tk.Tk):
         self.state = (self.stones, 0, 0, 0, 0, self.first_player)
         self.computer_move_times = []
 
-        # Notīrām teksta lauku un paziņojam par jaunu spēli
         self.clear_game_text()
         self.append_game_text(f"Sākam jaunu spēli!\n"
                               f"Akmeņu skaits uz galda: {self.stones}\n"
                               f"Pirmais gājiens: {'Jūs' if self.first_player == 1 else 'Dators'}\n"
                               f"Algoritms: {'Minimax' if self.algorithm_choice == 1 else 'Alfa-bēta'}\n")
 
-        # Ja pirmais ir dators — tūlīt veic datora gājienu
         if self.first_player == 2:
             self.computer_turn()
 
@@ -290,23 +271,18 @@ class GameApp(tk.Tk):
             self.append_game_text("Nav iespējams paņemt vairāk akmeņu, nekā atlicis!\n")
             return
 
-        # Pielietojam to pašu loģiku, kas sākotnējā kodā
         jaunais_atlika = self.state[0] - cik_panak
         sp1_akm, sp2_akm, sp1_punkti, sp2_punkti = self.state[1], self.state[2], self.state[3], self.state[4]
 
         if jaunais_atlika == 0:
-            # Ja paņēma pēdējos akmeņus
             sp1_punkti += cik_panak
             nakamais = 2
         else:
-            # Ja vēl paliek
             if jaunais_atlika % 2 == 0:
-                # Pāra skaits => pretinieks (dators) saņem 2 punktus
                 sp1_akm += cik_panak
                 sp2_punkti += 2
                 nakamais = 2
             else:
-                # Nepāra skaits => paņēmušais (spēlētājs) saņem 2 punktus
                 sp1_akm += cik_panak
                 sp1_punkti += 2
                 nakamais = 2
@@ -314,15 +290,12 @@ class GameApp(tk.Tk):
         self.state = (jaunais_atlika, sp1_akm, sp2_akm, sp1_punkti, sp2_punkti, nakamais)
         self.update_game_state_text()
 
-        # Ja paliek 1 akmens => tas pāriet pretiniekam un spēle beidzas
         if self.apply_one_stone_rule_if_needed():
             return
 
-        # Pārbaudām, vai neesam pabeiguši (ja palika 0)
         if self.check_game_over():
             return
 
-        # Gājiens datoram
         self.computer_turn()
 
     def computer_turn(self):
@@ -348,16 +321,13 @@ class GameApp(tk.Tk):
             self.state = next_state
             self.append_game_text(f"Dators izdarīja gājienu ({elapsed:.4f} s).\n")
         else:
-            # Nav iespējamu gājienu (maz ticams šajā spēlē)
             self.append_game_text("Dators nevar izdarīt gājienu.\n")
 
         self.update_game_state_text()
 
-        # Ja paliek 1 akmens => tas pāriet pretiniekam (cilvēkam) un spēle beidzas
         if self.apply_one_stone_rule_if_needed():
             return
 
-        # Pārbaudām, vai spēle nav galā
         self.check_game_over()
 
     def apply_one_stone_rule_if_needed(self):
@@ -366,21 +336,15 @@ class GameApp(tk.Tk):
         un spēle beidzas (akmeņi uz galda kļūst 0).
         """
         if self.state and self.state[0] == 1:
-            # Paliek 1 akmens
             akm, sp1_akm, sp2_akm, sp1_punkti, sp2_punkti, kam_gajiens = self.state
 
-            # Kam_gajiens = 1 => gājienu tikko izdarīja cilvēks, tātad 1 akmens pāriet datoram
-            # Kam_gajiens = 2 => gājienu tikko izdarīja dators, tātad 1 akmens pāriet cilvēkam
             if kam_gajiens == 1:
-                # Tātad cilvēks tikko gāja -> akmens pāriet datoram
                 sp2_akm += 1
                 self.append_game_text("\nPēc jūsu gājiena palika 1 akmens, tas pāriet datoram un spēle beidzas!\n")
             else:
-                # Dators tikko gāja -> akmens pāriet cilvēkam (spēlētājam)
                 sp1_akm += 1
                 self.append_game_text("\nPēc datora gājiena palika 1 akmens, tas pāriet jums un spēle beidzas!\n")
 
-            # Vairs nav akmeņu uz galda
             self.state = (0, sp1_akm, sp2_akm, sp1_punkti, sp2_punkti, kam_gajiens)
             self.update_game_state_text()
             self.check_game_over()
