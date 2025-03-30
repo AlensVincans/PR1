@@ -284,20 +284,10 @@ def handle_menu_events(event):
             app_state = STATE_GAME
 
 def auto_transfer_if_needed():
-    """
-    Papildnosacījums:
-      - Ja uz galda paliek tikai 1 vai 2 akmentiņi, tie automātiski pāriet 
-        pašreizējam spēlētājam (kurš veiktu nākamo gājienu),
-        un spēle uzreiz beidzas.
-      - Ja tie ir 2 akmeņi, punkti tiek pieskaitīti pēc parastajiem noteikumiem.
-      - Ja tas ir 1 akmentiņš, spēlētājs saņem +1 punktu.
-    Atgriež True, ja tika veikts auto-transfer un spēle beigusies.
-    """
     global state
     stones_left, p1_s, p2_s, p1_p, p2_p, current_player = state
 
     if stones_left == 1:
-        # 1 akmentiņš => +1 punktu spēlētājam
         if current_player == 1:
             p1_s += 1
             p1_p += 1
@@ -310,7 +300,6 @@ def auto_transfer_if_needed():
         return True
 
     elif stones_left == 2:
-        # 2 akmentiņi => kā parasti: paņemot 2, +2 punkti
         if current_player == 1:
             p1_p += 2
             state = (0, p1_s, p2_s, p1_p, p2_p, 2)
@@ -326,13 +315,10 @@ def handle_game_events(event):
     global state, app_state, computer_move_times
     global start_time_ai, player_can_move
 
-    # Сначала проверяем авто-передачу
     if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1 and player_can_move:
         if auto_transfer_if_needed():
-            # Если камней было 1 или 2, всё уже автоматически распределилось и игра завершилась
             return
 
-        # Если остаётся >=3, обрабатываем нажатие кнопок:
         stones_left = state[0]
         if stones_left >= 3:
             mouse_pos = event.pos
@@ -376,7 +362,6 @@ def make_player_move(move):
 def handle_computer_move():
     global state, app_state, computer_move_times, player_can_move
 
-    # Проверяем авто-передачу (1 или 2 камня)
     if auto_transfer_if_needed():
         return
 
