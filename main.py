@@ -245,7 +245,6 @@ def draw_game():
     turn_text = "Spēlētājs" if current_player == 1 else "Dators"
     draw_text(f"Gājiens: {turn_text}", 30, 320)
 
-    # Рисуем кнопки выбора только если камней >= 3.
     if stones_left >= 3:
         draw_button("Paņemt 2 akmeņus", button2_rect)
         draw_button("Paņemt 3 akmeņus", button3_rect)
@@ -284,6 +283,15 @@ def handle_menu_events(event):
             app_state = STATE_GAME
 
 def auto_transfer_if_needed():
+    """
+    Papildnosacījums:
+      - Ja uz galda paliek tikai 1 vai 2 akmentiņi, tie automātiski pāriet 
+        pašreizējam spēlētājam (kurš veiktu nākamo gājienu),
+        un spēle uzreiz beidzas.
+      - Ja tie ir 2 akmeņi, punkti tiek pieskaitīti pēc parastajiem noteikumiem.
+      - Ja tas ir 1 akmentiņš, spēlētājs saņem +1 punktu.
+    Atgriež True, ja tika veikts auto-transfer un spēle beigusies.
+    """
     global state
     stones_left, p1_s, p2_s, p1_p, p2_p, current_player = state
 
