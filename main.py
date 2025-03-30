@@ -1,5 +1,7 @@
-from collections import deque
+import tkinter as tk
+from tkinter import ttk
 import time
+from collections import deque
 
 class GameGraph:
     def __init__(self):
@@ -15,57 +17,66 @@ class GameGraph:
             self.graph[parent_state].append(child_state)
 
     def heuristic_evaluation(self, state):
-        stones_left, player1_stones, player2_stones, player1_points, player2_points, is_player_turn = state
-        return (player2_points - player1_points) + (player2_stones - player1_stones) + \
-               (2 if stones_left > 0 and stones_left % 2 == (0 if is_player_turn == 1 else 1) else 0)
+        """
+        Novērtējuma funkcija:
+        state: (akmeni_atlika, sp1_akmeni, sp2_akmeni, sp1_punkti, sp2_punkti, kam_gajiens)
+        """
+        akmeni_atlika, sp1_akm, sp2_akm, sp1_punkti, sp2_punkti, kam_gajiens = state
+        return (sp2_punkti - sp1_punkti) + (sp2_akm - sp1_akm) + \
+               (2 if akmeni_atlika > 0 and akmeni_atlika % 2 == (0 if kam_gajiens == 1 else 1) else 0)
 
-    def build_graph(self, stones, player1_stones=0, player2_stones=0, player1_points=0, player2_points=0, player=1):
+    def build_graph(self, stones, sp1_akm=0, sp2_akm=0, sp1_punkti=0, sp2_punkti=0, speletajs=1):
+        """
+        Veido stāvokļu grafu platumā, sākot no dotā akmeņu skaita.
+        """
         queue = deque()
-        root_state = (stones, player1_stones, player2_stones, player1_points, player2_points, player)
-        queue.append(root_state)
-        self.explored.add(root_state)
-        self.add_node(root_state)
+        sakuma_stavoklis = (stones, sp1_akm, sp2_akm, sp1_punkti, sp2_punkti, speletajs)
+        queue.append(sakuma_stavoklis)
+        self.explored.add(sakuma_stavoklis)
+        self.add_node(sakuma_stavoklis)
 
         while queue:
             current_state = queue.popleft()
-            stones_left, p1_s, p2_s, p1_p, p2_p, current_player = current_state
+            akmeni_atlika, sp1_akm, sp2_akm, sp1_punkti, sp2_punkti, kam_gajiens = current_state
 
-            if stones_left == 0:
+            if akmeni_atlika == 0:
                 continue
 
-            for move in [2, 3]:
-                if stones_left >= move:
-                    new_stones = stones_left - move
-
-                    if new_stones == 0:
-                        if current_player == 1:
-                            new_state = (new_stones, p1_s, p2_s, p1_p + move, p2_p, 2)
+            for cik_panak in [2, 3]:
+                if akmeni_atlika >= cik_panak:
+                    jaunais_atlika = akmeni_atlika - cik_panak
+                    if jaunais_atlika == 0:
+                        # Ja pēc gājiena akmens kaudze iztukšojas
+                        if kam_gajiens == 1:
+                            jaunais_stavoklis = (jaunais_atlika, sp1_akm, sp2_akm, sp1_punkti + cik_panak, sp2_punkti, 2)
                         else:
-                            new_state = (new_stones, p1_s, p2_s, p1_p, p2_p + move, 1)
+                            jaunais_stavoklis = (jaunais_atlika, sp1_akm, sp2_akm, sp1_punkti, sp2_punkti + cik_panak, 1)
                     else:
-                        if new_stones % 2 == 0:
-                            if current_player == 1:
-                                new_state = (new_stones, p1_s + move, p2_s, p1_p, p2_p + 2, 2)
+                        # Ja paliek akmeņi
+                        if jaunais_atlika % 2 == 0:
+                            # Pāra skaits => punkti pretiniekam
+                            if kam_gajiens == 1:
+                                jaunais_stavoklis = (jaunais_atlika, sp1_akm + cik_panak, sp2_akm, sp1_punkti, sp2_punkti + 2, 2)
                             else:
-                                new_state = (new_stones, p1_s, p2_s + move, p1_p + 2, p2_p, 1)
+                                jaunais_stavoklis = (jaunais_atlika, sp1_akm, sp2_akm + cik_panak, sp1_punkti + 2, sp2_punkti, 1)
                         else:
-                            if current_player == 1:
-                                new_state = (new_stones, p1_s + move, p2_s, p1_p + 2, p2_p, 2)
+                            # Nepāra skaits => punkti pašam
+                            if kam_gajiens == 1:
+                                jaunais_stavoklis = (jaunais_atlika, sp1_akm + cik_panak, sp2_akm, sp1_punkti + 2, sp2_punkti, 2)
                             else:
-                                new_state = (new_stones, p1_s, p2_s + move, p1_p, p2_p + 2, 1)
+                                jaunais_stavoklis = (jaunais_atlika, sp1_akm, sp2_akm + cik_panak, sp1_punkti, sp2_punkti + 2, 1)
 
-                    self.add_node(new_state)
-                    self.add_edge(current_state, new_state)
+                    self.add_node(jaunais_stavoklis)
+                    self.add_edge(current_state, jaunais_stavoklis)
 
-                    if new_state not in self.explored:
-                        queue.append(new_state)
-                        self.explored.add(new_state)
-    
-    def print_graph(self):
-        for node, children in self.graph.items():
-            print(f"{node} --> {children}")
+                    if jaunais_stavoklis not in self.explored:
+                        queue.append(jaunais_stavoklis)
+                        self.explored.add(jaunais_stavoklis)
 
     def minimax(self, state, depth, max_depth, maximizing_player, cache):
+        """
+        Parastais Minimax (dziļums depth līdz max_depth).
+        """
         if state in cache:
             return cache[state]
 
@@ -79,41 +90,23 @@ class GameGraph:
             return self.heuristic_evaluation(state)
 
         if maximizing_player:
-            best_val = float('-1')
+            best_val = float('-inf')
             for child in children:
                 val = self.minimax(child, depth + 1, max_depth, False, cache)
                 best_val = max(best_val, val)
         else:
-            best_val = float('1')
+            best_val = float('inf')
             for child in children:
                 val = self.minimax(child, depth + 1, max_depth, True, cache)
                 best_val = min(best_val, val)
 
         cache[state] = best_val
         return best_val
-    
-    def best_move_combined(self, state, max_depth=3, use_alpha_beta=False):
-        children = self.graph.get(state, [])
-        if not children:
-            return None
-
-        best_val = float('-1') if state[5] == 2 else float('1')
-        best_child = None
-        cache = {}
-
-        for child in children:
-            if use_alpha_beta:
-                val = self.alpha_beta(child, 1, max_depth, float('-1'), float('1'), state[5] == 2)
-            else:
-                val = self.minimax(child, 1, max_depth, state[5] == 1, cache)
-
-            if (state[5] == 2 and val > best_val) or (state[5] == 1 and val < best_val):
-                best_val = val
-                best_child = child
-
-        return best_child
 
     def alpha_beta(self, state, depth, max_depth, alpha, beta, maximizing_player):
+        """
+        Minimax ar alfa-bēta atgriezumiem.
+        """
         if depth == max_depth or state[0] == 0:
             return self.heuristic_evaluation(state)
 
@@ -122,7 +115,7 @@ class GameGraph:
             return self.heuristic_evaluation(state)
 
         if maximizing_player:
-            value = float('-1')
+            value = float('-inf')
             for child in children:
                 value = max(value, self.alpha_beta(child, depth + 1, max_depth, alpha, beta, False))
                 alpha = max(alpha, value)
@@ -130,7 +123,7 @@ class GameGraph:
                     break
             return value
         else:
-            value = float('1')
+            value = float('inf')
             for child in children:
                 value = min(value, self.alpha_beta(child, depth + 1, max_depth, alpha, beta, True))
                 beta = min(beta, value)
@@ -138,99 +131,326 @@ class GameGraph:
                     break
             return value
 
-def play_game(stones, first_player, algorithm_choice):
+    def best_move_combined(self, state, max_depth=3, use_alpha_beta=False):
+        """
+        Izvēlas labāko nākamo gājienu (Minimax vai Alfa-bēta).
+        Atgriež child-state, kas vislabāk izdevīgs esošajam spēlētājam.
+        """
+        children = self.graph.get(state, [])
+        if not children:
+            return None
 
-    computer_move_times = []
-
-    game_graph = GameGraph()
-    game_graph.build_graph(stones, player=first_player)
-
-    state = (stones, 0, 0, 0, 0, first_player)
-
-    while state[0] > 0:
-        print(f"Spēles stāvoklis: {state}")
-
-        if state[0] == 1:
-            if state[5] == 1:
-                state = (0, state[1], state[2] + 1, state[3], state[4], 1)
-            else:
-                state = (0, state[1] + 1, state[2], state[3], state[4], 2)
-            break
-
-        if state[0] in [2, 3]:
-            if state[0] in [1, 2]:
-                remaining = state[0]
-                if state[5] == 1:
-                    state = (0, state[1], state[2] + remaining, state[3], state[4], 1)
-                else:
-                    state = (0, state[1] + remaining, state[2], state[3], state[4], 2)
-                break
-
-
-        if state[5] == 1:
-            move = int(input("Jūsu gājiens (2 vai 3): "))
-            if move not in [2, 3] or state[0] < move:
-                print("Nederīgs gājiens! Mēģini vēlreiz.")
-                continue
-
-            new_stones = state[0] - move
-            if new_stones == 0:
-                state = (new_stones, state[1], state[2], state[3] + move, state[4], 2)
-            elif new_stones % 2 == 0:
-                state = (new_stones, state[1] + move, state[2], state[3], state[4] + 2, 2)
-            else:
-                state = (new_stones, state[1] + move, state[2], state[3] + 2, state[4], 2)
-
+        # kam_gajiens = 1 => cilvēks (minimizing), 2 => dators (maximizing)
+        maximizing_player = (state[5] == 2)
+        if maximizing_player:
+            best_val = float('-inf')
         else:
-            start_time = time.time()
+            best_val = float('inf')
 
-            use_alpha_beta = (algorithm_choice == 2)
-            state = game_graph.best_move_combined(state, 3, use_alpha_beta) or state
+        best_child = None
+        cache = {}
 
-            end_time = time.time()
-            elapsed_time = end_time - start_time
-            computer_move_times.append(elapsed_time)
-
-            print(f"Datora gājiena laiks: {elapsed_time:.4f} seconds")
-
-    if computer_move_times:
-        avg_time = sum(computer_move_times) / len(computer_move_times)
-        print(f"\nVidējais datora gājiena laiks: {avg_time:.4f} seconds")
-
-
-    stones_left, p1_s, p2_s, p1_p, p2_p, pl = state
-    final_p1 = p1_s + p1_p
-    final_p2 = p2_s + p2_p
-    print("\n--- Game Over ---")
-    print(f"Speletājs: {final_p1}, Dators: {final_p2}")
-    if final_p1 > final_p2:
-        print("Spēlētājs uzvar!")
-    elif final_p2 > final_p1:
-        print("Dators uzvar!")
-    else:
-        print("Spēle beidzās neizšķirti!")
-
-
-def get_valid_input(prompt, valid_range):
-    while True:
-        try:
-            value = int(input(prompt))
-            if value in valid_range:
-                return value
+        for child in children:
+            if use_alpha_beta:
+                val = self.alpha_beta(child, 1, max_depth, float('-inf'), float('inf'), maximizing_player)
             else:
-                print(f"Please enter a valid number: {valid_range}")
+                val = self.minimax(child, 1, max_depth, maximizing_player, cache)
+
+            if maximizing_player and val > best_val:
+                best_val = val
+                best_child = child
+            elif not maximizing_player and val < best_val:
+                best_val = val
+                best_child = child
+
+        return best_child
+
+
+class GameApp(tk.Tk):
+    def __init__(self):
+        super().__init__()
+        self.title("Akmens spēle (2 vai 3)")
+
+        # Noklusējuma parametri
+        self.stones = 50
+        self.first_player = 1
+        self.algorithm_choice = 1
+
+        # Saglabāsim spēles stāvokli un papildu datus
+        self.game_graph = None
+        self.state = None
+        self.computer_move_times = []   # glabās datora gājienu izpildes laikus
+
+        self.create_widgets()
+
+    def create_widgets(self):
+        # Iestatījumu rāmītis
+        frame_options = ttk.LabelFrame(self, text="Spēles iestatījumi")
+        frame_options.pack(padx=10, pady=10, fill=tk.X)
+
+        # Sākuma akmeņu skaits
+        ttk.Label(frame_options, text="Sākuma akmeņu skaits (50-70):").pack(anchor=tk.W)
+        self.spin_stones = tk.Spinbox(
+            frame_options, from_=50, to=70, width=5
+        )
+        self.spin_stones.pack(anchor=tk.W, pady=2)
+
+        # Kurš sāk
+        ttk.Label(frame_options, text="Kurš sāk spēli?").pack(anchor=tk.W)
+        self.first_player_var = tk.IntVar(value=1)
+        rb_player1 = ttk.Radiobutton(frame_options, text="Jūs (Spēlētājs)", variable=self.first_player_var, value=1)
+        rb_player2 = ttk.Radiobutton(frame_options, text="Dators", variable=self.first_player_var, value=2)
+        rb_player1.pack(anchor=tk.W)
+        rb_player2.pack(anchor=tk.W)
+
+        # Algoritms
+        ttk.Label(frame_options, text="Izvēlieties datora algoritmu:").pack(anchor=tk.W)
+        self.algorithm_var = tk.IntVar(value=1)
+        rb_minimax = ttk.Radiobutton(frame_options, text="Minimax", variable=self.algorithm_var, value=1)
+        rb_alphabeta = ttk.Radiobutton(frame_options, text="Alfa-bēta", variable=self.algorithm_var, value=2)
+        rb_minimax.pack(anchor=tk.W)
+        rb_alphabeta.pack(anchor=tk.W)
+
+        # Poga "Sākt spēli"
+        self.start_button = ttk.Button(frame_options, text="Sākt spēli", command=self.start_game)
+        self.start_button.pack(pady=5)
+
+        # Rāmītis "Spēles gaita"
+        frame_game = ttk.LabelFrame(self, text="Spēles gaita")
+        frame_game.pack(padx=10, pady=10, fill=tk.BOTH, expand=True)
+
+        # Teksta lauks stāvokļa izdrukai
+        self.game_state_text = tk.Text(frame_game, height=10, width=60, state='disabled')
+        self.game_state_text.pack(pady=5)
+
+        # Ievads spēlētāja gājienam
+        self.player_move_var = tk.StringVar()
+        ttk.Label(frame_game, text="Jūsu gājiens (2 vai 3):").pack(anchor=tk.W)
+        self.entry_move = ttk.Entry(frame_game, textvariable=self.player_move_var, width=5)
+        self.entry_move.pack(anchor=tk.W, pady=2)
+
+        # Poga "Veikt gājienu"
+        self.move_button = ttk.Button(frame_game, text="Veikt gājienu", command=self.player_move)
+        self.move_button.pack(pady=5)
+
+        # Poga "Sākt no jauna" (sākumā atspējota, ieslēgsies pēc spēles beigām)
+        self.restart_button = ttk.Button(frame_game, text="Sākt no jauna", command=self.restart_game)
+        self.restart_button.pack(pady=5)
+        self.restart_button.config(state='disabled')
+
+    def start_game(self):
+        """
+        Inicializē jaunu spēli saskaņā ar iestatījumiem.
+        """
+        self.stones = int(self.spin_stones.get())
+        self.first_player = self.first_player_var.get()
+        self.algorithm_choice = self.algorithm_var.get()
+
+        self.game_graph = GameGraph()
+        self.game_graph.build_graph(self.stones, speletajs=self.first_player)
+
+        self.state = (self.stones, 0, 0, 0, 0, self.first_player)
+        self.computer_move_times = []
+
+        # Notīrām teksta lauku un paziņojam par jaunu spēli
+        self.clear_game_text()
+        self.append_game_text(f"Sākam jaunu spēli!\n"
+                              f"Akmeņu skaits uz galda: {self.stones}\n"
+                              f"Pirmais gājiens: {'Jūs' if self.first_player == 1 else 'Dators'}\n"
+                              f"Algoritms: {'Minimax' if self.algorithm_choice == 1 else 'Alfa-bēta'}\n")
+
+        # Ja pirmais ir dators — tūlīt veic datora gājienu
+        if self.first_player == 2:
+            self.computer_turn()
+
+    def player_move(self):
+        """
+        Spēlētāja (1) gājiens. Nolasa ievadīto akmeņu skaitu, pārbauda derīgumu,
+        veic izmaiņas stāvoklī un, ja spēle nav galā, ļauj datoram iet.
+        """
+        if self.state is None or self.state[0] == 0:
+            return  # Spēle jau beigusies vai nav sākta
+
+        kam_gajiens = self.state[5]
+        if kam_gajiens != 1:
+            self.append_game_text("Tagad nav jūsu gājiens!\n")
+            return
+
+        try:
+            cik_panak = int(self.player_move_var.get())
         except ValueError:
-            print("Lūdzu, ievadiet derīgu skaitli: ")
+            self.append_game_text("Lūdzu ievadiet 2 vai 3.\n")
+            return
+
+        if cik_panak not in [2, 3]:
+            self.append_game_text("Nederīgs gājiens! Var paņemt tikai 2 vai 3 akmeņus.\n")
+            return
+
+        if self.state[0] < cik_panak:
+            self.append_game_text("Nav iespējams paņemt vairāk akmeņu, nekā atlicis!\n")
+            return
+
+        # Pielietojam to pašu loģiku, kas sākotnējā kodā
+        jaunais_atlika = self.state[0] - cik_panak
+        sp1_akm, sp2_akm, sp1_punkti, sp2_punkti = self.state[1], self.state[2], self.state[3], self.state[4]
+
+        if jaunais_atlika == 0:
+            # Ja paņēma pēdējos akmeņus
+            sp1_punkti += cik_panak
+            nakamais = 2
+        else:
+            # Ja vēl paliek
+            if jaunais_atlika % 2 == 0:
+                # Pāra skaits => pretinieks (dators) saņem 2 punktus
+                sp1_akm += cik_panak
+                sp2_punkti += 2
+                nakamais = 2
+            else:
+                # Nepāra skaits => paņēmušais (spēlētājs) saņem 2 punktus
+                sp1_akm += cik_panak
+                sp1_punkti += 2
+                nakamais = 2
+
+        self.state = (jaunais_atlika, sp1_akm, sp2_akm, sp1_punkti, sp2_punkti, nakamais)
+        self.update_game_state_text()
+
+        # Ja paliek 1 akmens => tas pāriet pretiniekam un spēle beidzas
+        if self.apply_one_stone_rule_if_needed():
+            return
+
+        # Pārbaudām, vai neesam pabeiguši (ja palika 0)
+        if self.check_game_over():
+            return
+
+        # Gājiens datoram
+        self.computer_turn()
+
+    def computer_turn(self):
+        """
+        Datora (2) gājiens. Izsauc best_move_combined un mēra laiku.
+        """
+        if self.state is None or self.state[0] == 0:
+            return
+
+        kam_gajiens = self.state[5]
+        if kam_gajiens != 2:
+            return
+
+        start_time = time.time()
+        use_alpha_beta = (self.algorithm_choice == 2)
+        next_state = self.game_graph.best_move_combined(self.state, 3, use_alpha_beta)
+        end_time = time.time()
+
+        elapsed = end_time - start_time
+        self.computer_move_times.append(elapsed)
+
+        if next_state is not None:
+            self.state = next_state
+            self.append_game_text(f"Dators izdarīja gājienu ({elapsed:.4f} s).\n")
+        else:
+            # Nav iespējamu gājienu (maz ticams šajā spēlē)
+            self.append_game_text("Dators nevar izdarīt gājienu.\n")
+
+        self.update_game_state_text()
+
+        # Ja paliek 1 akmens => tas pāriet pretiniekam (cilvēkam) un spēle beidzas
+        if self.apply_one_stone_rule_if_needed():
+            return
+
+        # Pārbaudām, vai spēle nav galā
+        self.check_game_over()
+
+    def apply_one_stone_rule_if_needed(self):
+        """
+        Ja paliek precīzi 1 akmens, tas automātiski pāriet pretiniekam (tam, kurš NAV gājienu darījis),
+        un spēle beidzas (akmeņi uz galda kļūst 0).
+        """
+        if self.state and self.state[0] == 1:
+            # Paliek 1 akmens
+            akm, sp1_akm, sp2_akm, sp1_punkti, sp2_punkti, kam_gajiens = self.state
+
+            # Kam_gajiens = 1 => gājienu tikko izdarīja cilvēks, tātad 1 akmens pāriet datoram
+            # Kam_gajiens = 2 => gājienu tikko izdarīja dators, tātad 1 akmens pāriet cilvēkam
+            if kam_gajiens == 1:
+                # Tātad cilvēks tikko gāja -> akmens pāriet datoram
+                sp2_akm += 1
+                self.append_game_text("\nPēc jūsu gājiena palika 1 akmens, tas pāriet datoram un spēle beidzas!\n")
+            else:
+                # Dators tikko gāja -> akmens pāriet cilvēkam (spēlētājam)
+                sp1_akm += 1
+                self.append_game_text("\nPēc datora gājiena palika 1 akmens, tas pāriet jums un spēle beidzas!\n")
+
+            # Vairs nav akmeņu uz galda
+            self.state = (0, sp1_akm, sp2_akm, sp1_punkti, sp2_punkti, kam_gajiens)
+            self.update_game_state_text()
+            self.check_game_over()
+            return True
+
+        return False
+
+    def check_game_over(self):
+        """
+        Pārbaudām, vai spēle beigusies (akmeņu nav).
+        Ja jā – izvadām rezultātu un ieslēdzam pogu "Sākt no jauna".
+        """
+        if self.state and self.state[0] == 0:
+            akm, sp1_akm, sp2_akm, sp1_punkti, sp2_punkti, pl = self.state
+            gala_sp1 = sp1_akm + sp1_punkti
+            gala_sp2 = sp2_akm + sp2_punkti
+
+            self.append_game_text("\n--- Spēle ir galā! ---\n")
+            self.append_game_text(f"Jūsu kopsumma: {gala_sp1}\nDatora kopsumma: {gala_sp2}\n")
+
+            if gala_sp1 > gala_sp2:
+                self.append_game_text("Jūs uzvarējāt!\n")
+            elif gala_sp2 > gala_sp1:
+                self.append_game_text("Dators uzvarēja!\n")
+            else:
+                self.append_game_text("Neizšķirts!\n")
+
+            if self.computer_move_times:
+                vid_laiks = sum(self.computer_move_times) / len(self.computer_move_times)
+                self.append_game_text(f"Datora vidējais gājiena laiks: {vid_laiks:.4f} s.\n")
+
+            self.restart_button.config(state='normal')
+            return True
+        return False
+
+    def restart_game(self):
+        """
+        Sāk visu no jauna (spēli var uzsākt atkārtoti).
+        """
+        self.state = None
+        self.computer_move_times.clear()
+        self.clear_game_text()
+        self.append_game_text("Iestatījumi atiestatīti. Lūdzu ievadiet jaunus un spiediet 'Sākt spēli'.\n")
+        self.restart_button.config(state='disabled')
+
+    def update_game_state_text(self):
+        """
+        Atjauno stāvokļa info teksta laukā.
+        """
+        akm, sp1_akm, sp2_akm, sp1_punkti, sp2_punkti, kam_gajiens = self.state
+        self.append_game_text(
+            f"\nPašreizējais stāvoklis:\n"
+            f"Atlikušo akmeņu skaits: {akm}\n"
+            f"Jums rokās: {sp1_akm} | Jūsu punkti: {sp1_punkti}\n"
+            f"Datoram rokās: {sp2_akm} | Datora punkti: {sp2_punkti}\n"
+            f"Gājiens: {'Jūs' if kam_gajiens == 1 else 'Dators'}\n"
+        )
+
+    def clear_game_text(self):
+        self.game_state_text.config(state='normal')
+        self.game_state_text.delete(1.0, tk.END)
+        self.game_state_text.config(state='disabled')
+
+    def append_game_text(self, text):
+        self.game_state_text.config(state='normal')
+        self.game_state_text.insert(tk.END, text)
+        self.game_state_text.see(tk.END)
+        self.game_state_text.config(state='disabled')
 
 
 if __name__ == "__main__":
-    while True:
-        stones = get_valid_input("Ievadiet sākuma akmeņu skaitu (no 50 līdz 70): ", range(50, 71))
-        first_player = get_valid_input("Kas sāk spēli? (1 — Jūs, 2 — Dators):  ", [1, 2])
-        algorithm_choice = get_valid_input("Izvēlieties AI algoritmu (1 — Minimax, 2 — Alfa-beta): ", [1, 2])
-
-        play_game(stones, first_player, algorithm_choice)
-        restart = input("Vai vēlaties spēlēt vēlreiz? (yes/no):").strip().lower()
-        if restart not in ["yes", "y"]:
-            print("Paldies par spēli! Uz redzēšanos!")
-            break
+    app = GameApp()
+    app.mainloop()
