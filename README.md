@@ -9,7 +9,7 @@ Programmatūra nodrošina šādas iespējas:
 - Izvēlēties datora algoritmu: Minimaksa vai Alfa-beta algoritmu.
 - Veikt gājienus un redzēt izmaiņas spēles laukumā.
 - Uzsākt spēli atkārtoti pēc tās pabeigšanas.
-- Grafisko lietotāja saskarni ar pygame.
+- Grafisko lietotāja saskarni ar tkinter.
 
 ## Spēles noteikumi
 1. Spēle sākas ar 50 līdz 70 akmentiņiem, ko izvēlas spēlētājs.
@@ -17,13 +17,13 @@ Programmatūra nodrošina šādas iespējas:
 3. Spēlētāji pēc kārtas paņem 2 vai 3 akmentiņus.
 4. Ja pēc gājiena uz galda paliek pāra skaits, pretinieks saņem 2 punktus.
 5. Ja pēc gājiena uz galda paliek nepāra skaits, spēlētājs saņem 2 punktus.
-6. Spēle beidzas, kad uz galda nav akmentiņu.
+6. Spēle beidzas, kad uz galda vairs nav neviena akmentiņa. Ja uz galda paliek viens akmentiņš, tas tiek pieskaitīts spēlētāja kopējam akmeņu skaitam.
 7. Spēlētājiem piešķir papildu punktus par saviem savāktajiem akmentiņiem.
 8. Uzvar spēlētājs ar lielāko punktu skaitu, ja punktu skaits vienāds – neizšķirts.
 
 ## Tehniskās prasības
 - **Programmas valoda:** Python
-- **Bibliotēkas:** `pygame`
+- **Bibliotēkas:** `tkinter`
 - **Git repozitorijs:** [PR1](https://github.com/AlensVincans/PR1)
 
 ## Algoritmi un Eksperimenti
@@ -42,7 +42,7 @@ Programmatūra nodrošina šādas iespējas:
    ```
 2. Instalējiet nepieciešamās bibliotēkas:
    ```sh
-   pip install pygame
+   pip install tkinter
    ```
 3. Palaižiet spēli:
    ```sh
